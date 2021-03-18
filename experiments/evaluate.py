@@ -5,10 +5,11 @@ benchmarks = ["atax", "chebyshev", "fft", "gesummv", "mibench",
   "mri", "poly1", "poly3", "poly5", "poly7", "qspline", "sgfilter", 
   "stencil", "syrk", "bicg", "conv", "gemm", "kmeans", "mm", "mvt",  
   "poly2", "poly4", "poly6", "poly8", "radar", "spmv", "syr2k", "trmm"]
-benchmarkBW = [8, 16, 32, 64, 128]
+benchmarkBW = [128] # [8, 16, 32, 64, 128]
 
 mode = ['full', 'mlirGen', 'mlirRewrite', 'bitWidthGen', 'lowering']
-m = mode[4]
+m = mode[0]
+slicebw = '4' # change it to 8 if it is testing 8-bit slices
 
 # Generate raw mlir with memref
 if m == 'mlirGen' or m == 'full':
@@ -81,3 +82,16 @@ if m == 'bitWidthGen' or m == 'full':
                 assert 0
 
 # Lower MLIR benchmarks to fabric
+if m == 'lowering' or m == 'full':
+    os.system("mkdir -p slice"+slicebw)
+    for bw in benchmarkBW:
+        os.system("mkdir -p slice"+slicebw+"/mlir"+str(bw))
+        for bench in benchmarks:
+            os.system("set -o xtrace; hpx-opt -create-dataflow --hpx-slice --hpx-rm-unused-func-args --hpx-cse --canonicalize --hpx-fold-slice --hpx-fold-never mlir"+str(bw)+"/"+bench+".mlir > slice"+slicebw+"/mlir"+str(bw)+"/"+bench+".mlir")
+        os.system("mkdir -p slice"+slicebw+"/dot"+str(bw))
+        for bench in benchmarks:
+            os.system("set -o xtrace; hpx-opt --hpx-print-dot slice"+slicebw+"/mlir"+str(bw)+"/"+bench+".mlir > /dev/null")
+            os.system("set -o xtrace; mv hpx.dot slice"+slicebw+"/dot"+str(bw)+"/"+bench+".dot")
+
+
+
