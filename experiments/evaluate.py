@@ -5,9 +5,9 @@ benchmarks = ["atax", "chebyshev", "fft", "gesummv", "mibench",
   "mri", "poly1", "poly3", "poly5", "poly7", "qspline", "sgfilter", 
   "stencil", "syrk", "bicg", "conv", "gemm", "kmeans", "mm", "mvt",  
   "poly2", "poly4", "poly6", "poly8", "radar", "spmv", "syr2k", "trmm"]
-benchmarkBW = [128] # [8, 16, 32, 64, 128]
+benchmarkBW = [8, 16, 32, 64, 128]
 
-mode = ['full', 'mlirGen', 'mlirRewrite', 'bitWidthGen', 'lowering']
+mode = ['full', 'mlirGen', 'mlirRewrite', 'bitWidthGen', 'lowering', 'dotgen']
 m = mode[0]
 slicebw = '4' # change it to 8 if it is testing 8-bit slices
 
@@ -88,6 +88,10 @@ if m == 'lowering' or m == 'full':
         os.system("mkdir -p slice"+slicebw+"/mlir"+str(bw))
         for bench in benchmarks:
             os.system("set -o xtrace; hpx-opt -create-dataflow --hpx-slice --hpx-rm-unused-func-args --hpx-cse --canonicalize --hpx-fold-slice --hpx-fold-never mlir"+str(bw)+"/"+bench+".mlir > slice"+slicebw+"/mlir"+str(bw)+"/"+bench+".mlir")
+        
+# Generate dot graphs
+if m == 'dotgen' or m == 'full':
+    for bw in benchmarkBW:
         os.system("mkdir -p slice"+slicebw+"/dot"+str(bw))
         for bench in benchmarks:
             os.system("set -o xtrace; hpx-opt --hpx-print-dot slice"+slicebw+"/mlir"+str(bw)+"/"+bench+".mlir > /dev/null")
